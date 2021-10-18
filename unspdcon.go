@@ -65,9 +65,32 @@ func GetPlaying(bus *dbus.Conn) Playing {
 
 func Output(p Playing) {
 	fmt.Printf(
-		"Title: %v\nAlbum: %v\nArtist(s): %v\nPlayback Status: %v\n",
-		p.Title, p.Album, strings.Join(p.AlbumArtist[:], ","), p.Status,
+		"Title:     %v\nAlbum:     %v\nArtist(s): %v\nPlayback:  %v\n",
+		p.Title, p.Album, strings.Join(p.AlbumArtist[:], ", "), p.Status,
 	)
+}
+
+func OutputWaybar(p Playing) {
+	var text, tooltip string
+	if p.Status == "Stopped" {
+		text = "..."
+		tooltip = "Not Playing"
+	} else {
+
+		text = fmt.Sprintf("%v • %v", p.Title, p.AlbumArtist[0])
+		tooltip = fmt.Sprintf(
+			"Title:     %v\\nAlbum:     %v\\nArtist(s): %v\\nPlayback:  %v",
+			p.Title, p.Album, strings.Join(p.Artist[:], ", "), p.Status,
+		)
+
+		if p.Status == "Playing" {
+			text += "   "
+		} else if p.Status == "Paused" {
+			text += "   "
+		}
+	}
+
+	fmt.Printf("{\"text\": \"%v\", \"tooltip\": \"%v\", \"class\": \"$class\"}\n", text, tooltip)
 }
 
 func main() {
@@ -81,5 +104,5 @@ func main() {
 
 	pl := GetPlaying(conn)
 
-	Output(pl)
+	OutputWaybar(pl)
 }
