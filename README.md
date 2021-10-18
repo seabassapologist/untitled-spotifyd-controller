@@ -1,2 +1,2 @@
-# unspcon
+# unspdcon
 Untitled Spotifyd Controller
