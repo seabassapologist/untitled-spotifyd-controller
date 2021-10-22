@@ -23,3 +23,5 @@ Example Configuration for Waybar:
     "interval": 2
 }
 ```
+### Known Issues:
+* Podcast metadata won't display in output (See [spotifyd#1000](https://github.com/Spotifyd/spotifyd/issues/1000))
