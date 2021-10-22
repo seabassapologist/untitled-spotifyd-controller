@@ -14,7 +14,7 @@ Usage of spdcon:
 Example Configuration for Waybar:
 ```json
 "custom/spotifyd": {
-    "format": " {}  ",
+    "format": " {}",
     "return-type": "json",
     "exec": "spdcon -o waybar",
     "on-click": "spdcon -c PlayPause",
