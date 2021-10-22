@@ -4,7 +4,7 @@ A simple Go utility to display track information from, and send commands to, [sp
 ![spdcon running in Waybar in Sway](docs/spdcon_waybar.png)
 
 ```
-Usage of bin/spdcon:
+Usage of spdcon:
   -c string
         Commands: 'PlayPause', 'Stop', 'Next', 'Previous'
   -o string
