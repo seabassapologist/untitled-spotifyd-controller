@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -17,6 +18,12 @@ type Playing struct {
 	AlbumArtist []string
 }
 
+type Waybar struct {
+	Text    string `json:"text"`
+	Tooltip string `json:"tooltip"`
+	Class   string `json:"class"`
+}
+
 func GetPlaying(bus *dbus.Conn) Playing {
 
 	var info map[string]dbus.Variant
@@ -25,38 +32,38 @@ func GetPlaying(bus *dbus.Conn) Playing {
 		dbus.ObjectPath("/org/mpris/MediaPlayer2"),
 	).Call("org.freedesktop.DBus.Properties.GetAll", 0, "org.mpris.MediaPlayer2.Player").Store(&info)
 
-	if sp != nil {
-		fmt.Println(sp)
-		fmt.Println("Check if spotifyd is running!")
-		os.Exit(1)
-	}
-
-	var meta map[string]dbus.Variant
-	info["Metadata"].Store(&meta)
-
 	var ti, al, au, st string = "", "", "", ""
 	var ar, aa []string = []string{}, []string{}
 
-	info["PlaybackStatus"].Store(&st)
+	if sp != nil {
+		ti = "Not Playing"
+		st = "Stopped"
+	} else {
+		var meta map[string]dbus.Variant
+		info["Metadata"].Store(&meta)
 
-	if len(meta) == 0 {
-		if st == "Playing" || st == "Paused" {
-			// There's a track playing, but no Metadata available
-			ti = "?"
-			al = "?"
-			ar = append(ar, "?")
-			aa = append(aa, "?")
+		info["PlaybackStatus"].Store(&st)
+
+		if len(meta) == 0 {
+			if st == "Playing" || st == "Paused" {
+				// There's a track playing, but no Metadata available
+				ti = "?"
+				al = "?"
+				ar = append(ar, "?")
+				aa = append(aa, "?")
+			} else {
+				ti = "Not Playing"
+				st = "Stopped"
+			}
+
 		} else {
-			ti = "Not Playing"
-			st = "Stopped"
+			meta["xesam:title"].Store(&ti)
+			meta["xesam:album"].Store(&al)
+			meta["mpris:artUrl"].Store(&au)
+			meta["xesam:albumArtist"].Store(&aa)
+			meta["xesam:artist"].Store(&ar)
 		}
 
-	} else {
-		meta["xesam:title"].Store(&ti)
-		meta["xesam:album"].Store(&al)
-		meta["mpris:artUrl"].Store(&au)
-		meta["xesam:albumArtist"].Store(&aa)
-		meta["xesam:artist"].Store(&ar)
 	}
 
 	return Playing{ti, al, au, st, ar, aa}
@@ -73,13 +80,13 @@ func Output(p Playing) {
 func OutputWaybar(p Playing) {
 	var text, tooltip string
 	if p.Status == "Stopped" {
-		text = "..."
-		tooltip = "Not Playing"
+		text = "Not Playing"
+		tooltip = "It's quiet..."
 	} else {
 
 		text = fmt.Sprintf("%v • %v", p.Title, p.AlbumArtist[0])
 		tooltip = fmt.Sprintf(
-			"Title:     %v\\nAlbum:     %v\\nArtist(s): %v\\nPlayback:  %v",
+			"Title:     %v\nAlbum:     %v\nArtist(s): %v\nPlayback:  %v",
 			p.Title, p.Album, strings.Join(p.Artist[:], ", "), p.Status,
 		)
 
@@ -90,7 +97,14 @@ func OutputWaybar(p Playing) {
 		}
 	}
 
-	fmt.Printf("{\"text\": \"%v\", \"tooltip\": \"%v\", \"class\": \"$class\"}\n", text, tooltip)
+	wb, _ := json.Marshal(Waybar{
+		Text:    text,
+		Tooltip: tooltip,
+		Class:   "$class",
+	})
+
+	fmt.Println(string(wb))
+
 }
 
 func main() {
