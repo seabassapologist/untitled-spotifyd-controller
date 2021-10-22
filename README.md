@@ -10,3 +10,16 @@ Usage of spdcon:
   -o string
         Formatting for output: 'Waybar', 'None' (default)
 ```
+
+Example Configuration for Waybar:
+```json
+"custom/spotifyd": {
+    "format": " {}  ",
+    "return-type": "json",
+    "exec": "spdcon -o waybar",
+    "on-click": "spdcon -c PlayPause",
+    "on-click-right": "spdcon -c Next",
+    "on-click-middle": "spdcon -c Previous",
+    "interval": 2
+}
+```
