@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 	"strings"
@@ -9,7 +10,7 @@ import (
 	"github.com/godbus/dbus/v5"
 )
 
-type Playing struct {
+type Track struct {
 	Title       string
 	Album       string
 	ArtUrl      string
@@ -24,7 +25,44 @@ type Waybar struct {
 	Class   string `json:"class"`
 }
 
-func GetPlaying(bus *dbus.Conn) Playing {
+// Toggle Playback Status between Playing or Paused
+func TogglePlay(bus *dbus.Conn) {
+	// D-Bus MediaPlayer2 PlayPause is broken in spotifyd (https://github.com/Spotifyd/spotifyd/issues/890)
+	// Will try to update this when it's fixed
+
+	var p string
+	s, err := bus.Object(
+		"org.mpris.MediaPlayer2.spotifyd",
+		dbus.ObjectPath("/org/mpris/MediaPlayer2"),
+	).GetProperty("org.mpris.MediaPlayer2.Player.PlaybackStatus")
+
+	if err != nil {
+		fmt.Println("Failed to get playback status ", err)
+		os.Exit(1)
+	}
+
+	s.Store(&p)
+
+	mt := "Play"
+	if p == "Playing" {
+		mt = "Pause"
+	}
+
+	bus.Object(
+		"org.mpris.MediaPlayer2.spotifyd",
+		dbus.ObjectPath("/org/mpris/MediaPlayer2"),
+	).Call("org.mpris.MediaPlayer2.Player."+mt, 0)
+}
+
+// Wrapper function to execute org.mpris.MediaPlayer2.Player Methods
+func SendCommand(bus *dbus.Conn, mt string) {
+	bus.Object(
+		"org.mpris.MediaPlayer2.spotifyd",
+		dbus.ObjectPath("/org/mpris/MediaPlayer2"),
+	).Call("org.mpris.MediaPlayer2.Player."+mt, 0)
+}
+
+func GetPlaying(bus *dbus.Conn) Track {
 
 	var info map[string]dbus.Variant
 	sp := bus.Object(
@@ -66,33 +104,35 @@ func GetPlaying(bus *dbus.Conn) Playing {
 
 	}
 
-	return Playing{ti, al, au, st, ar, aa}
+	return Track{ti, al, au, st, ar, aa}
 
 }
 
-func Output(p Playing) {
+// Output track information
+func Output(t Track) {
 	fmt.Printf(
 		"Title:     %v\nAlbum:     %v\nArtist(s): %v\nPlayback:  %v\n",
-		p.Title, p.Album, strings.Join(p.AlbumArtist[:], ", "), p.Status,
+		t.Title, t.Album, strings.Join(t.AlbumArtist[:], ", "), t.Status,
 	)
 }
 
-func OutputWaybar(p Playing) {
+// Output a JSON formatted string for use with Waybar's 'custom' module
+func OutputWaybar(t Track) {
 	var text, tooltip string
-	if p.Status == "Stopped" {
+	if t.Status == "Stopped" {
 		text = "Not Playing"
 		tooltip = "It's quiet..."
 	} else {
 
-		text = fmt.Sprintf("%v • %v", p.Title, p.AlbumArtist[0])
+		text = fmt.Sprintf("%v • %v", t.Title, t.AlbumArtist[0])
 		tooltip = fmt.Sprintf(
 			"Title:     %v\nAlbum:     %v\nArtist(s): %v\nPlayback:  %v",
-			p.Title, p.Album, strings.Join(p.Artist[:], ", "), p.Status,
+			t.Title, t.Album, strings.Join(t.Artist[:], ", "), t.Status,
 		)
 
-		if p.Status == "Playing" {
+		if t.Status == "Playing" {
 			text += "   "
-		} else if p.Status == "Paused" {
+		} else if t.Status == "Paused" {
 			text += "   "
 		}
 	}
@@ -109,6 +149,10 @@ func OutputWaybar(p Playing) {
 
 func main() {
 
+	op := flag.String("o", "", "Formatting for output: 'Waybar', 'None' (default)")
+	cmd := flag.String("c", "", "Commands: 'PlayPause', 'Stop', 'Next', 'Previous'")
+	flag.Parse()
+
 	// Get dbus connection to Session Bus
 	conn, err := dbus.ConnectSessionBus()
 	if err != nil {
@@ -116,7 +160,25 @@ func main() {
 		os.Exit(1)
 	}
 
-	pl := GetPlaying(conn)
+	cm := map[string]bool{"playpause": true, "stop": true, "next": true, "previous": true}
+	// check if cmd flag was passed
+	if cm[strings.ToLower(*cmd)] {
+		*cmd = strings.Title(strings.ToLower(*cmd)) // Ensure cmd is properly formatted
+		if *cmd == "Playpause" {
+			TogglePlay(conn)
+		} else {
+			SendCommand(conn, *cmd)
+		}
+	} else { // if no cmd flags output track info
+		pl := GetPlaying(conn)
 
-	OutputWaybar(pl)
+		switch strings.ToLower(*op) {
+		case "waybar":
+			OutputWaybar(pl)
+		case "none":
+			Output(pl)
+		default:
+			Output(pl)
+		}
+	}
 }
