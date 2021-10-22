@@ -1,4 +1,4 @@
-module github.com/seabassapologist/unspdcon
+module github.com/seabassapologist/untitled-spotifyd-controller
 
 go 1.17
 
