@@ -1,5 +1,5 @@
 # Untitled Spotifyd Controller
-A simple Go utility to display track information from, and send commands to, [spotifyd](https://github.com/Spotifyd/spotifyd) from Tiling Window Managers like Sway and i3
+A simple Go utility to display track information from, and send commands to, [spotifyd](https://github.com/Spotifyd/spotifyd) from status bars and indicators
 
 ![spdcon running in Waybar in Sway](docs/spdcon_waybar.png)
 
