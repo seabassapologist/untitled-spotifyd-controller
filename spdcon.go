@@ -25,35 +25,6 @@ type Waybar struct {
 	Class   string `json:"class"`
 }
 
-// Toggle Playback Status between Playing or Paused
-func TogglePlay(bus *dbus.Conn) {
-	// D-Bus MediaPlayer2 PlayPause is broken in spotifyd (https://github.com/Spotifyd/spotifyd/issues/890)
-	// Will try to update this when it's fixed
-
-	var p string
-	s, err := bus.Object(
-		"org.mpris.MediaPlayer2.spotifyd",
-		dbus.ObjectPath("/org/mpris/MediaPlayer2"),
-	).GetProperty("org.mpris.MediaPlayer2.Player.PlaybackStatus")
-
-	if err != nil {
-		fmt.Println("Failed to get playback status ", err)
-		os.Exit(1)
-	}
-
-	s.Store(&p)
-
-	mt := "Play"
-	if p == "Playing" {
-		mt = "Pause"
-	}
-
-	bus.Object(
-		"org.mpris.MediaPlayer2.spotifyd",
-		dbus.ObjectPath("/org/mpris/MediaPlayer2"),
-	).Call("org.mpris.MediaPlayer2.Player."+mt, 0)
-}
-
 // Wrapper function to execute org.mpris.MediaPlayer2.Player Methods
 func SendCommand(bus *dbus.Conn, mt string) {
 	bus.Object(
@@ -153,7 +124,7 @@ func main() {
 	cmd := flag.String("c", "", "Commands: 'PlayPause', 'Stop', 'Next', 'Previous'")
 	flag.Parse()
 
-	// Get dbus connection to Session Bus
+	// Connect to dbus Session Bus
 	conn, err := dbus.ConnectSessionBus()
 	if err != nil {
 		fmt.Println("Failed to connect to Session Bus ", err)
@@ -165,10 +136,9 @@ func main() {
 	if cm[strings.ToLower(*cmd)] {
 		*cmd = strings.Title(strings.ToLower(*cmd)) // Ensure cmd is properly formatted
 		if *cmd == "Playpause" {
-			TogglePlay(conn)
-		} else {
-			SendCommand(conn, *cmd)
+			*cmd = "PlayPause"
 		}
+		SendCommand(conn, *cmd)
 	} else { // if no cmd flags output track info
 		pl := GetPlaying(conn)
 
