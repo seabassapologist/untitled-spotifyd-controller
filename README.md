@@ -34,7 +34,7 @@ $ go build . -o spdcon
 
 ## Installing
 
-untitled-spotifyd-controller is available in the [Arch User Repository]
+untitled-spotifyd-controller is available in the [Arch User Repository](https://aur.archlinux.org/packages/untitled-spotifyd-controller)
 
 or inside the source dir:
 
