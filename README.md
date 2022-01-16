@@ -23,5 +23,26 @@ Example Configuration for Waybar:
     "interval": 2
 }
 ```
-### Known Issues:
+
+## Building
+
+To build locally, ensure you have `Go >=1.17` installed, and run the following in the source dir
+
+```
+$ go build . 
+```
+
+## Installing
+
+untitled-spotifyd-controller is available in the [Arch User Repository]
+
+or 
+
+```
+$ go install .
+```
+
+to install to your `$GOPATH`
+
+## Known Issues:
 * Podcast metadata won't display in output (See [spotifyd#1000](https://github.com/Spotifyd/spotifyd/issues/1000))
