@@ -1,4 +1,4 @@
-// Maintainer: teamseabass@protonmail.com
+// Maintainer: seabassapologist - teamseabass@protonmail.com
 package main
 
 import (
