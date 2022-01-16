@@ -36,10 +36,10 @@ $ go build .
 
 untitled-spotifyd-controller is available in the [Arch User Repository]
 
-or 
+or inside the source dir:
 
 ```
-$ go install .
+$ go install . -o spdcon 
 ```
 
 to install to your `$GOPATH`
